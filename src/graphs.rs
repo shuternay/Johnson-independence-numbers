@@ -1,11 +1,10 @@
-use std::collections::BTreeSet;
-
+use bit_set::BitSet;
 use itertools::Itertools;
 use ndarray::Array1;
 
 pub struct Graph<T> {
     pub vertices: Vec<T>,
-    pub neighbours: Vec<BTreeSet<usize>>,
+    pub neighbours: Vec<BitSet>,
 }
 
 /// Generates complement of the generalised Johnson graph J_{+/-}(n, k, t).
@@ -55,7 +54,7 @@ pub fn build_johnson_graph_complement(
 
     let mut neighbours = Vec::new();
     for (index_1, vertex_1) in vertices.iter().enumerate() {
-        neighbours.push(BTreeSet::new());
+        neighbours.push(BitSet::new());
 
         // Skip neighbours of fixed vertices
         let mut dropped = false;

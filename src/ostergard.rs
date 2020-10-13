@@ -1,12 +1,13 @@
-use std::collections::BTreeSet;
 use std::time::Instant;
+
+use bit_set::BitSet;
 
 use crate::graphs::Graph;
 
 /// This struct is used for computing max clique size of a graph
 pub struct Ostergard<'a, T: std::fmt::Display> {
     graph: &'a Graph<T>,
-    pub max_cliques: Vec<BTreeSet<usize>>,
+    pub max_cliques: Vec<BitSet>,
     pub max_clique_size: usize,
     max_clique_size_on_suffix: Vec<usize>,
 }
@@ -26,14 +27,13 @@ impl<'a, T: std::fmt::Display> Ostergard<'a, T> {
         for i in (0..(self.graph.vertices.len())).rev() {
             let now = Instant::now();
 
-            let mut clique = BTreeSet::new();
+            let mut clique = BitSet::new();
             clique.insert(i);
             let found_clique = self.ostergard(
                 &mut clique,
                 (i..(self.graph.vertices.len()))
-                    .collect::<BTreeSet<usize>>()
+                    .collect::<BitSet>()
                     .intersection(&self.graph.neighbours[i])
-                    .cloned()
                     .collect(),
             );
             if found_clique {
@@ -51,7 +51,7 @@ impl<'a, T: std::fmt::Display> Ostergard<'a, T> {
     }
 
     /// Internal recursive function which is used to calculate max clique size
-    fn ostergard(&self, clique: &mut BTreeSet<usize>, mut candidates: BTreeSet<usize>) -> bool {
+    fn ostergard(&self, clique: &mut BitSet, mut candidates: BitSet) -> bool {
         if candidates.is_empty() {
             if clique.len() > self.max_clique_size {
                 println!(
@@ -59,7 +59,7 @@ impl<'a, T: std::fmt::Display> Ostergard<'a, T> {
                     clique.len(),
                     clique
                 );
-                for &v in clique.iter() {
+                for v in clique.iter() {
                     println!("{}", self.graph.vertices[v]);
                 }
                 return true;
@@ -72,21 +72,20 @@ impl<'a, T: std::fmt::Display> Ostergard<'a, T> {
                 return false;
             }
 
-            let current = *candidates.iter().next().unwrap();
+            let current = candidates.iter().next().unwrap();
 
             if clique.len() + self.max_clique_size_on_suffix[current] <= self.max_clique_size {
                 return false;
             }
 
-            candidates.remove(&current);
+            candidates.remove(current);
             let next_candidates = candidates
                 .intersection(&self.graph.neighbours[current])
-                .cloned()
                 .collect();
 
             clique.insert(current);
             let found_clique = self.ostergard(clique, next_candidates);
-            clique.remove(&current);
+            clique.remove(current);
 
             if found_clique {
                 return true;
@@ -105,7 +104,7 @@ mod tests {
     fn build_graph_form_mask(vertices_num: usize, mut mask: u32) -> Graph<usize> {
         let vertices = (0..vertices_num).collect();
 
-        let mut neighbours = vec![BTreeSet::new(); vertices_num];
+        let mut neighbours = vec![BitSet::new(); vertices_num];
         for vertex_1 in 0..vertices_num {
             for vertex_2 in (vertex_1 + 1)..vertices_num {
                 if mask & 1 == 1 {
@@ -137,7 +136,7 @@ mod tests {
 
             let mut found_antiedge = false;
             for (&vertex_1, &vertex_2) in clique.iter().tuple_combinations() {
-                if !graph.neighbours[vertex_1].contains(&vertex_2) {
+                if !graph.neighbours[vertex_1].contains(vertex_2) {
                     found_antiedge = true;
                     break;
                 }
